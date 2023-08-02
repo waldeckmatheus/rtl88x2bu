@@ -16,9 +16,14 @@ Realtek's 5.6.1.6 source was found bundled with the [Cudy WU1200 AC1200 High Gai
 
 Build confirmed on:
 
-```
-Linux version 5.4.0-4-amd64 (debian-kernel@lists.debian.org) (gcc version 9.2.1 20200203 (Debian 9.2.1-28)) #1 SMP Debian 5.4.19-1 (2020-02-13)
-```
+* Linux version `5.4.0-91-generic` on Linux Mint 20.2 (30 November 2021)
+* Linux version `5.15.89` on Manjaro (3 February 2023)
+* Linux version `5.19` on Ubuntu 22.4
+* Linux version `6.1.0-9-amd64` on Debian Bookworm
+* Linux version `6.1.*` (self compiled) on Debian Bookworm and Ubuntu 22.04
+* Linux version `6.2.*` (self compiled) on Debian Bookworm and Ubuntu 22.04
+* Linux version `6.3.*` (self compiled) on Debian Bookworm and Ubuntu 22.04
+* Linux version `6.4.3` (self compiled) on Debian Bookworm
 
 ## Using and Installing the Driver
 
@@ -38,7 +43,7 @@ register it in DKMS. An executable explanation of how to do so can be found in
 the script `deploy.sh`. Since registering a kernel module in DKMS is a major
 intervention, only execute it if you understand what the script does.
 
-### Known Problems
+### Unknown Symbol Errors
 
 Some users reported problems due to `Unknown symbol in module`. This can be
 caused by old deployments of the driver still being present in the systems
@@ -48,12 +53,44 @@ modules:
     sudo dkms remove rtl88x2bu/5.8.7.4 --all
     find /lib/modules -name cfg80211.ko -ls
     sudo rm -f /lib/modules/*/updates/net/wireless/cfg80211.ko
-    
-    
+
+
 This can also be caused by cfg80211 module not being present in the kernel.
 You can remedy this by running:
 
     sudo modprobe cfg80211
+
+### Linux 5.18+ and RTW88 Driver
+
+Starting from Linux 5.18, some distributions have added experimental RTW88 USB
+support (include RTW88x2BU support). It is not yet stable but if it works well
+on your system, then you no longer need this driver. But if it doesn't work or
+is unstable, you need to manually blacklist it because it has a higher loading
+priority than this external drivers.
+
+Check the currently loaded module using `lsmod`. If you see `rtw88_core`,
+`rtw88_usb`, or any name beginning with `rtw88_` then you are using the RTW88
+driver. If you see `88x2bu` then you are using this RTW88x2BU driver.
+
+To blacklist RTW88 8822bu USB driver, run the following command:
+
+```
+echo "blacklist rtw88_8822bu" > /etc/modprobe.d/rtw8822bu.conf
+```
+
+And reboot your system.
+
+
+### Secure Boot
+
+Secure Boot will prevent the module from loading as it isn't signed. In order
+to check whether you have secure boot enabled, you couly run  `mokutil
+--sb-state`. If you see something like `SecureBoot disabled`, you do not take
+to setup module signing.
+
+If Secure Boot is enabled on your machine, you either could disable it in BIOS
+or UEFI or you could set up signing the module. How to do so is described
+[here](https://github.com/cilynx/rtl88x2bu/issues/210#issuecomment-1166402943).
 
 
 ## Raspberry Pi Access Point
